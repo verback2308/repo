@@ -99,6 +99,19 @@ jobs:
           for f in sideload/*.json; do
             if [ -e "$f" ]; then cp "$f" site/apps.json; fi
           done
+          # Transitional, and meant to be deleted. Builds up to 1.7.x poll
+          # repo.verback2308.pp.ua for updates and subscribers added it as their
+          # source, and neither can be told to look elsewhere -- serving them
+          # from here keeps both working while they move to builds that poll
+          # github.io directly. Drop this line once they have, and the site goes
+          # back to being reachable only under its own name.
+          #
+          # Note this is not a redirect but a second name for one site: while it
+          # is set, GitHub answers github.io/repo/ with a 301 here. Relative
+          # paths in Packages resolve against whichever host was asked, so both
+          # work. Nothing in apps.toml names this domain, so removing the line is
+          # the whole rollback.
+          echo repo.verback2308.pp.ua > site/CNAME
 
       - uses: actions/upload-pages-artifact@v3
         with:
