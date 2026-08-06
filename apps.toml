@@ -1,0 +1,42 @@
+# Everything the repo publishes, and everything it says about it.
+#
+# Packages reach the repo two ways. Those with a `source` are pulled from that
+# GitHub repository's releases on every run, so publishing a release is all it
+# takes to ship an update. Those without one are third-party packages we only
+# redistribute -- drop their .deb into debs/ by hand and it gets indexed.
+#
+# `package` must match the Package: field inside the .deb; that is what ties a
+# deb to its entry here. A deb with no entry is still published, just with a
+# bare depiction.
+
+[repo]
+label = "verback2308"
+description = "Apps and tweaks by verback2308"
+# Trailing slash required, and all-lowercase: Sileo and Cydia lowercase the URL
+# the user types, and GitHub Pages paths are case-sensitive.
+url = "https://repo.verback2308.com/"
+tint = "#ff0000"
+
+[[apps]]
+package = "com.verback.ytlite"
+# Still the pre-rename name, and it keeps working after the rename because the
+# API follows those -- updating it is cosmetic, not required.
+source = "verback2308/ytlite"
+# Copied to the site root as /apps.json. Shipped builds poll that exact URL for
+# their update-available notification (AppManifestURL in their Info.plist), so
+# it has to keep answering there for as long as any of them are installed --
+# it is also the only channel that can tell those users anything at all.
+sideload_source = "source/apps.json"
+name = "Opaline"
+tagline = "Lightweight YouTube client for iOS 12+"
+github = "https://github.com/verback2308/opaline"
+screenshots = "opaline"
+description = """
+A lightweight YouTube client for iOS 12+. No ads, no tracking, no dependencies.
+
+- SponsorBlock
+- Return YouTube Dislike
+- Up to 1080p playback
+- Background audio and Picture in Picture
+- Subtitles
+"""

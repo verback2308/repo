@@ -1,0 +1,6 @@
+# Built by the workflow on every run.
+site/
+changelogs/
+# Pulled from the source repos' releases; only third-party debs are committed.
+debs/*.deb
+__pycache__/

@@ -1,0 +1,111 @@
+# Builds the APT repo and publishes it to GitHub Pages.
+#
+# Debs come from two places: releases of the repositories listed in apps.toml,
+# fetched fresh on every run, and whatever is committed under debs/ for
+# third-party packages that have no releases to pull from.
+#
+# Nothing here needs a token beyond the default one -- the source repositories
+# are public, so `gh release download` reaches them unauthenticated. That is
+# also why publishing is a pull rather than a push: an app repo would need a
+# PAT to write here, and its binaries would settle into this repo's history
+# forever.
+#
+# Settings → Pages → Source must be "GitHub Actions", and the custom domain is
+# written by this workflow (see the CNAME step), not set in the UI -- a domain
+# configured in the UI is dropped on the next deploy.
+name: Publish repo
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Picks up releases published in the app repos since the last run.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/configure-pages@v5
+
+      - name: Collect debs and changelogs from the source repos
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p debs changelogs sideload
+          # Every [[apps]] entry that has a source, as
+          # "package  source-repo  sideload-path-or-dash" triples.
+          python3 - <<'PY' > sources.txt
+          import tomllib
+          config = tomllib.load(open("apps.toml", "rb"))
+          for app in config.get("apps", []):
+              if app.get("source"):
+                  print(app["package"], app["source"], app.get("sideload_source", "-"))
+          PY
+          while read -r package source sideload; do
+            echo "::group::$source"
+            # Deb filenames carry the version, so downloads never collide.
+            # Releases without .deb assets just skip.
+            gh release list --repo "$source" --exclude-drafts --limit 1000 \
+              --json tagName --jq '.[].tagName' |
+              while read -r tag; do
+                gh release download "$tag" --repo "$source" --pattern '*.deb' \
+                  --dir debs --clobber 2>/dev/null ||
+                  echo "$tag: no debs, skipping"
+              done
+            # Release notes become the Changelog tab of the Sileo depiction.
+            gh api "repos/$source/releases" --paginate \
+              --jq '.[] | select(.draft | not) | {tag: .tag_name, body: (.body // "")}' \
+              > "changelogs/$package.jsonl"
+            # Fetched through the API rather than raw.githubusercontent.com,
+            # which is the one path here that survives a repository rename for
+            # certain.
+            if [ "$sideload" != "-" ]; then
+              gh api "repos/$source/contents/$sideload" \
+                --jq '.content' | base64 -d > "sideload/$package.json"
+              echo "sideload source: $(wc -c < "sideload/$package.json") bytes"
+            fi
+            echo "::endgroup::"
+          done < sources.txt
+          echo "Collected $(find debs -name '*.deb' | wc -l | tr -d ' ') deb(s)"
+
+      - name: Generate APT repo
+        run: |
+          set -euo pipefail
+          python3 scripts/make_repo.py --config apps.toml \
+            --debs debs --out site \
+            --screenshots screenshots --changelogs changelogs
+          if [ -f CydiaIcon.png ]; then cp CydiaIcon.png site/CydiaIcon.png; fi
+          # The sideload source rides along on the same domain, at the root path
+          # shipped builds already poll. With more than one app here this has to
+          # become a merge into a single apps[] array instead of a copy.
+          for f in sideload/*.json; do
+            if [ -e "$f" ]; then cp "$f" site/apps.json; fi
+          done
+          # Claims the custom domain for this Pages site. Only one site may hold
+          # a domain at a time, so whichever repo deploys last wins -- make sure
+          # no other workflow still writes this file.
+          echo repo.verback2308.com > site/CNAME
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
