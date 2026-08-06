@@ -1,6 +1,6 @@
 # APT repo
 
-The Cydia/Sileo repository behind <https://repo.verback2308.com/>.
+The Cydia/Sileo repository behind <https://verback2308.github.io/repo/>.
 
 Packages arrive two ways, both described in `apps.toml`:
 
@@ -25,6 +25,7 @@ python3 scripts/test_make_repo.py
 ## Setup notes
 
 - Settings → Pages → Source must be **GitHub Actions**.
-- The custom domain is written by the workflow (`site/CNAME`), not set in the
-  UI — a domain configured in the UI is dropped on the next deploy. Only one
-  Pages site may hold a domain, so no other repo may still write that file.
+- There is no custom domain, so **this repository's name is part of the URL
+  every subscriber holds**. Renaming it silently drops all of them, the same way
+  the rebrand dropped the previous ones. It is frozen, and lowercase on purpose:
+  Sileo lowercases the URL a user types, and Pages paths are case-sensitive.

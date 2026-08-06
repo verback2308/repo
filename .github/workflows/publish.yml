@@ -10,9 +10,10 @@
 # PAT to write here, and its binaries would settle into this repo's history
 # forever.
 #
-# Settings → Pages → Source must be "GitHub Actions", and the custom domain is
-# written by this workflow (see the CNAME step), not set in the UI -- a domain
-# configured in the UI is dropped on the next deploy.
+# Settings → Pages → Source must be "GitHub Actions". There is no custom domain:
+# the repo is served from verback2308.github.io/repo/, which means this
+# repository's name is part of every URL subscribers hold. Renaming it loses
+# them, so it is frozen.
 name: Publish repo
 
 on:
@@ -98,10 +99,6 @@ jobs:
           for f in sideload/*.json; do
             if [ -e "$f" ]; then cp "$f" site/apps.json; fi
           done
-          # Claims the custom domain for this Pages site. Only one site may hold
-          # a domain at a time, so whichever repo deploys last wins -- make sure
-          # no other workflow still writes this file.
-          echo repo.verback2308.com > site/CNAME
 
       - uses: actions/upload-pages-artifact@v3
         with:

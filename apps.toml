@@ -14,7 +14,7 @@ label = "verback2308"
 description = "Apps and tweaks by verback2308"
 # Trailing slash required, and all-lowercase: Sileo and Cydia lowercase the URL
 # the user types, and GitHub Pages paths are case-sensitive.
-url = "https://repo.verback2308.com/"
+url = "https://verback2308.github.io/repo/"
 tint = "#ff0000"
 
 [[apps]]
